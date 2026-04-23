@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  dashboard:
+    build: .
+    container_name: dashboard-producao
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=production
+    networks:
+      - dashboard-net
+
+networks:
+  dashboard-net:
+    driver: bridge
