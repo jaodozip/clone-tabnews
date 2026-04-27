@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  papel     Papel    @default(ATENDENTE)
+  ativo     Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  @@map("usuarios")
+}
+
+enum Papel {
+  ADMIN
+  ATENDENTE
+  COZINHA
+}
+
+// ─── Cardápio ─────────────────────────────────────────────────────────────────
+
+model Produto {
+  id          String     @id @default(cuid())
+  nome        String
+  descricao   String?
+  preco       Decimal    @db.Decimal(10, 2)
+  categoria   Categoria
+  imagemUrl   String?
+  disponivel  Boolean    @default(true)
+  ordem       Int        @default(0)
+  criadoEm   DateTime   @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  itensPedido ItemPedido[]
+
+  @@map("produtos")
+}
+
+enum Categoria {
+  CHOPP
+  CERVEJA
+  BEBIDA
+  ESPETINHO
+  PORCAO
+}
+
+// ─── Mesas ────────────────────────────────────────────────────────────────────
+
+model Mesa {
+  id         String     @id @default(cuid())
+  numero     Int        @unique
+  qrCodeUrl  String?
+  status     MesaStatus @default(FECHADA)
+  criadoEm  DateTime   @default(now())
+
+  comandas Comanda[]
+
+  @@map("mesas")
+}
+
+enum MesaStatus {
+  ABERTA
+  FECHADA
+}
+
+// ─── Comandas ─────────────────────────────────────────────────────────────────
+
+model Comanda {
+  id         String    @id @default(cuid())
+  mesaId     String
+  mesa       Mesa      @relation(fields: [mesaId], references: [id])
+  abertaEm   DateTime  @default(now())
+  fechadaEm  DateTime?
+  total      Decimal?  @db.Decimal(10, 2)
+
+  itensPedido ItemPedido[]
+
+  @@map("comandas")
+}
+
+// ─── Itens de Pedido ──────────────────────────────────────────────────────────
+
+model ItemPedido {
+  id             String        @id @default(cuid())
+  comandaId      String
+  comanda        Comanda       @relation(fields: [comandaId], references: [id])
+  produtoId      String
+  produto        Produto       @relation(fields: [produtoId], references: [id])
+  quantidade     Int
+  precoUnitario  Decimal       @db.Decimal(10, 2)
+  observacao     String?
+  status         StatusPedido  @default(RECEBIDO)
+  criadoEm      DateTime      @default(now())
+  atualizadoEm  DateTime      @updatedAt
+
+  @@map("itens_pedido")
+}
+
+enum StatusPedido {
+  RECEBIDO
+  EM_PREPARO
+  ENTREGUE
+  CANCELADO
+}
